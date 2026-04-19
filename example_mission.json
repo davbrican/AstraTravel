@@ -66,16 +66,16 @@
       "engine": "RL10_ICPS"
     },
     {
-      "at": 10875.0,
+      "at": 10785.0,
       "type": "burn",
       "name": "trans_lunar_injection",
       "engine": "RL10_ICPS",
       "throttle": 1.0,
-      "duration": 150.0,
+      "duration": 170.0,
       "direction": "tangential"
     },
     {
-      "at": 11025.0,
+      "at": 11055.0,
       "type": "shutdown",
       "name": "tli_cutoff",
       "engine": "RL10_ICPS"
