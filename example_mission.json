@@ -1,0 +1,99 @@
+{
+  "mission_name": "Example Artemis JSON Mission",
+  "time_scale": 1.0,
+  "start_time_seconds": 0.0,
+  "vehicle": "artemis",
+  "start": "DEFAULT",
+  "steps": [
+    {
+      "at": 0.0,
+      "type": "burn",
+      "name": "liftoff_vertical_ascent",
+      "engine": "SLS_LIFTOFF_CLUSTER",
+      "force_newtons": 39000000.0,
+      "duration": 45.0,
+      "direction": "radial_out"
+    },
+    {
+      "at": 45.0,
+      "type": "burn",
+      "name": "early_gravity_turn",
+      "engine": "SLS_LIFTOFF_CLUSTER",
+      "throttle": 1.0,
+      "duration": 75.0,
+      "direction": {
+        "radial_out": 0.75,
+        "tangential": 0.25
+      }
+    },
+    {
+      "at": 120.0,
+      "type": "set_guidance",
+      "name": "point_downrange",
+      "direction": {
+        "radial_out": 0.35,
+        "tangential": 0.65
+      }
+    },
+    {
+      "at": 120.0,
+      "type": "burn",
+      "name": "downrange_ascent",
+      "engine": "SLS_LIFTOFF_CLUSTER",
+      "throttle": 1.0,
+      "duration": 120.0,
+      "direction": {
+        "radial_out": 0.35,
+        "tangential": 0.65
+      }
+    },
+    {
+      "at": 242.0,
+      "type": "shutdown",
+      "name": "core_engine_cutoff",
+      "engine": "SLS_LIFTOFF_CLUSTER"
+    },
+    {
+      "at": 246.0,
+      "type": "jettison_stage",
+      "name": "core_stage_separation",
+      "stage": "SLS_Core_Boosters"
+    },
+    {
+      "at": 255.0,
+      "type": "burn",
+      "name": "icps_orbit_insertion",
+      "engine": "RL10_ICPS",
+      "throttle": 1.0,
+      "duration": 420.0,
+      "direction": "prograde"
+    },
+    {
+      "at": 675.0,
+      "type": "shutdown",
+      "name": "icps_orbit_insertion_cutoff",
+      "engine": "RL10_ICPS"
+    },
+    {
+      "at": 1800.0,
+      "type": "burn",
+      "name": "trans_lunar_injection",
+      "engine": "RL10_ICPS",
+      "throttle": 1.0,
+      "duration": 900.0,
+      "direction": "moon"
+    },
+    {
+      "at": 2700.0,
+      "type": "shutdown",
+      "name": "tli_cutoff",
+      "engine": "RL10_ICPS"
+    },
+    {
+      "at": 2710.0,
+      "type": "jettison_stage",
+      "name": "icps_separation",
+      "stage": "ICPS"
+    }
+  ]
+}
