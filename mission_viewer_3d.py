@@ -199,6 +199,7 @@ class MissionViewer3DV2:
         self.ax.set_xlim(-d + self.camera.pan_x, d + self.camera.pan_x)
         self.ax.set_ylim(-d + self.camera.pan_y, d + self.camera.pan_y)
         self.ax.set_zlim(-d + self.camera.pan_z, d + self.camera.pan_z)
+        self.ax.set_box_aspect((1.0, 1.0, 1.0))
 
     def _marker_size(self, body: CelestialBody) -> float:
         if body.name == "Sun":
@@ -353,6 +354,11 @@ class MissionViewer3DV2:
         moon_distance_km = (self.moon.global_position - self.spacecraft.global_position).magnitude()
         active_engines = ", ".join(engine.name for engine in self.spacecraft.active_engines()) or "none"
         stages = ", ".join(stage.name for stage in self.spacecraft.iter_stages())
+        stage_propellant = " | ".join(
+            f"{stage.name}: {stage.propellant_mass_kg:,.0f} kg"
+            for stage in self.spacecraft.iter_stages()
+            if stage.tanks
+        ) or "none"
         mode_desc = {
             "earth_local": "1 = Earth-local",
             "earth_moon": "2 = Earth-Moon",
@@ -371,6 +377,7 @@ class MissionViewer3DV2:
                 f"Altitude: {snap.altitude_km:,.1f} km",
                 f"Speed: {snap.speed_km_s:,.3f} km/s",
                 f"Propellant: {self.spacecraft.propellant_mass_kg:,.1f} kg",
+                f"Stage prop: {stage_propellant}",
                 f"Total mass: {self.spacecraft.total_mass_kg:,.1f} kg",
                 f"Available Δv: {self.spacecraft.available_delta_v_km_s:,.3f} km/s",
                 f"Moon distance: {moon_distance_km:,.0f} km",

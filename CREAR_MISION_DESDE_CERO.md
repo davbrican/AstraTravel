@@ -999,11 +999,32 @@ Campos principales:
   "start_time_seconds": 0.0,
   "vehicle": "artemis",
   "start": "DEFAULT",
+  "atmosphere": {},
   "steps": []
 }
 ```
 
-`vehicle` puede ser:
+Campos de nivel raiz:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `mission_name` | string | No | `"JsonMission"` | Nombre legible de la mision. Se guarda en el controlador y aparece en el visor. |
+| `time_scale` | number | No | `1.0` | Escala del reloj de simulacion. `1.0` significa 1 segundo simulado por cada segundo real pasado al motor. |
+| `start_time_seconds` | number | No | `0.0` | Tiempo inicial del reloj de la mision, en segundos. Sirve para arrancar la simulacion ya desplazada en el timeline. |
+| `vehicle` | string u objeto | No | `"artemis"` | Nave que se va a crear. Puede ser `"artemis"`, `"apollo"` o una definicion custom completa. |
+| `start` | string u objeto | No | `"DEFAULT"` | Posicion, velocidad y orientacion inicial de la nave. |
+| `atmosphere` | objeto | No | `{}` | Parametros del modelo atmosferico exponencial de la Tierra. Si no lo pones, usa valores terrestres estandar. |
+| `steps` | array | No | `[]` | Lista cronologica de maniobras: encender motores, cambiar guia, apagar motores o separar etapas. |
+
+Notas:
+
+- Los tiempos de `steps` son segundos de simulacion, no segundos reales.
+- Si falta `steps`, la nave se crea y se coloca, pero no ejecuta maniobras.
+- El JSON no define la fisica orbital. Gravedad, empuje, rozamiento atmosferico, consumo de combustible y masa variable los calcula el motor.
+
+### Vehiculo
+
+`vehicle` puede ser un preset:
 
 - `"artemis"`
 - `"apollo"`
@@ -1044,6 +1065,66 @@ Ejemplo de vehiculo custom:
   ]
 }
 ```
+
+Campos de `vehicle` cuando es objeto:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `name` | string | No | `"JsonVehicle"` | Nombre de la nave. |
+| `dry_radius_km` | number | No | `5.0` | Radio fisico de la nave seca, en km. En la practica tambien afecta a su representacion y a calculos donde se necesita radio. |
+| `color_hex` | string | No | `"#FFAA55"` | Color usado para dibujar la nave. |
+| `metadata` | objeto | No | `{}` | Datos extra. El motor de rozamiento usa `drag_coefficient` y `reference_area_m2` si estan presentes. |
+| `stages` | array | Si | - | Lista de etapas. Debe haber al menos una etapa en un vehiculo custom. |
+
+Campos utiles dentro de `vehicle.metadata`:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `drag_coefficient` | number | No | Depende de la nave si existe, o valor interno | Coeficiente aerodinamico usado para calcular drag. |
+| `reference_area_m2` | number | No | Depende de la nave si existe, o valor interno | Area frontal de referencia, en m2, usada para calcular drag. |
+
+#### Etapas
+
+Cada elemento de `vehicle.stages` define una etapa:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `name` | string | Si | - | Nombre de la etapa. Se usa en `jettison_stage`. |
+| `dry_mass_kg` | number | Si | - | Masa seca de la etapa, en kg. No incluye propelente. |
+| `tanks` | array | No | `[]` | Tanques disponibles para los motores de esta etapa. |
+| `engines` | array | No | `[]` | Motores de esta etapa. |
+| `metadata` | objeto | No | `{}` | Datos extra libres para la etapa. |
+
+#### Tanques
+
+Cada elemento de `stage.tanks` define un tanque:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `name` | string | Si | - | Nombre del tanque. Los motores lo referencian en `tank_names`. |
+| `propellant_type` | string | No | `"generic"` | Tipo de propelente. Valores soportados: `"generic"`, `"mmh"`, `"nto"`, `"lox"`, `"lh2"`, `"rp1"`, `"monomethylhydrazine"`, `"dinitrogen_tetroxide"`. |
+| `capacity_kg` | number | Si | - | Capacidad maxima del tanque, en kg. Debe ser mayor que 0. |
+| `current_mass_kg` | number | No | Igual a `capacity_kg` | Masa inicial de propelente, en kg. Debe estar entre 0 y `capacity_kg`. |
+| `priority` | integer | No | `0` | Prioridad del tanque. Actualmente se guarda, pero el consumo se reparte proporcionalmente entre los tanques candidatos. |
+| `metadata` | objeto | No | `{}` | Datos extra libres para el tanque. |
+
+#### Motores
+
+Cada elemento de `stage.engines` define un motor:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `name` | string | Si | - | Nombre del motor. Se usa en pasos `burn`, `shutdown` y en `tank_names` de otros sistemas si se amplian. |
+| `max_thrust_newtons` | number | Si | - | Empuje maximo del motor, en newtons. Debe ser mayor que 0. |
+| `specific_impulse_seconds` | number | Si | - | Impulso especifico, en segundos. Controla cuanto propelente consume para producir empuje. |
+| `tank_names` | array de strings | No | `[]` | Tanques de los que consume este motor. Si esta vacio, puede consumir de los tanques disponibles de su etapa. |
+| `direction_body_frame` | vector `[x,y,z]` | No | `[1,0,0]` | Direccion del empuje en el sistema local de la nave. Se normaliza automaticamente. |
+| `min_throttle` | number | No | `0.0` | Acelerador minimo permitido, entre 0 y 1. |
+| `max_throttle` | number | No | `1.0` | Acelerador maximo permitido, mayor que 0 y hasta 1. |
+| `restartable` | boolean | No | `true` | Indica si el motor puede reencenderse. |
+| `remaining_ignitions` | integer o null | No | `null` | Numero de encendidos restantes. `null` significa sin limite explicito. |
+| `gimbal_limit_deg` | number | No | `0.0` | Limite de gimbal en grados. Actualmente se guarda como propiedad del motor. |
+| `role` | string | No | `"main"` | Rol descriptivo del motor, por ejemplo `"main"` o `"upper_stage"`. |
 
 ### Punto de salida
 
@@ -1096,7 +1177,63 @@ Tambien puedes pedir superficie terrestre con tu propio radial:
 }
 ```
 
+Campos de `start`:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `type` | string | No | `"DEFAULT"` | Modo de colocacion inicial. Valores: `"DEFAULT"`, `"coordinates"`, `"earth_surface"`. |
+| `frame` | string | Solo en `coordinates` | `"absolute"` | Sistema de referencia de `position_km` y `velocity_km_s`. Valores: `"absolute"` o `"earth_relative"`. |
+| `position_km` | vector `[x,y,z]` | Si en `coordinates` | - | Posicion inicial en km. Si `frame` es `"earth_relative"`, se suma a la posicion actual de la Tierra. |
+| `velocity_km_s` | vector `[x,y,z]` | No | `[0,0,0]` | Velocidad inicial en km/s. Si `frame` es `"earth_relative"`, se suma a la velocidad actual de la Tierra. |
+| `direction` | direccion | No en `coordinates` | `"radial_out"` | Orientacion inicial de la nave. Acepta los mismos formatos que los pasos. |
+| `radial` | vector `[x,y,z]` | No en `earth_surface` | `[1,0,0]` | Direccion desde el centro de la Tierra hasta la plataforma. Se normaliza. |
+| `tangential` | vector `[x,y,z]` | No en `earth_surface` | `[0,1,0]` | Direccion horizontal usada para la velocidad por rotacion terrestre. Se normaliza. |
+| `altitude_km` | number | No en `earth_surface` | `0.1` | Altitud inicial sobre el radio terrestre, en km. |
+| `earth_rotation_speed_km_s` | number | No en `earth_surface` | `0.465` | Velocidad tangencial aproximada por rotacion terrestre, en km/s. |
+
+`"DEFAULT"` equivale a pedir una plataforma calculada automaticamente. El codigo proyecta la direccion Tierra-Luna sobre el plano orbital de la Tierra y usa eso como radial de lanzamiento.
+
+### Atmosfera
+
+`atmosphere` configura `EarthExponentialAtmosphere`. Si no lo incluyes, se usan los valores por defecto:
+
+```json
+{
+  "atmosphere": {
+    "rho0_kg_m3": 1.225,
+    "scale_height_m": 8500.0,
+    "temperature_k": 288.15,
+    "pressure_pa": 101325.0
+  }
+}
+```
+
+Campos de `atmosphere`:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `rho0_kg_m3` | number | No | `1.225` | Densidad atmosferica a nivel del mar, en kg/m3. |
+| `scale_height_m` | number | No | `8500.0` | Altura de escala exponencial, en metros. Cuanto mayor, mas lentamente cae la densidad con la altitud. |
+| `temperature_k` | number | No | `288.15` | Temperatura constante del modelo, en kelvin. |
+| `pressure_pa` | number | No | `101325.0` | Presion a nivel del mar, en pascales. |
+
+La densidad y presion se calculan asi:
+
+```text
+valor = valor_nivel_mar * exp(-altitude_m / scale_height_m)
+```
+
 ### Tipos de pasos
+
+Cada elemento de `steps` tiene un disparo temporal y una accion. Todos aceptan:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `type` | string | No | `"burn"` | Tipo de paso. Tambien puedes usar `action` como alias. Valores: `"burn"`, `"set_guidance"`, `"shutdown"`, `"jettison_stage"`. |
+| `action` | string | No | - | Alias de `type` si prefieres llamar accion al campo. |
+| `at` | number | No | `0.0` | Segundo de simulacion en el que se ejecuta el paso. |
+| `time_seconds` | number | No | `0.0` | Alias de `at`. Si estan los dos, manda `at`. |
+| `name` | string | No | `step_<indice>_<tipo>` | Nombre legible del paso. Aparece en eventos recientes del controlador. |
 
 #### `burn`
 
@@ -1134,7 +1271,23 @@ Si usas `force_newtons`, la funcion calcula:
 throttle = force_newtons / engine.max_thrust_newtons
 ```
 
-Si la fuerza pedida supera lo que puede dar el motor, se lanza un error.
+Campos especificos de `burn`:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `engine` | string | Si | - | Nombre del motor que se enciende. Debe existir en alguna etapa de la nave. |
+| `duration` | number | Si | - | Duracion del encendido, en segundos de simulacion. El generador crea automaticamente un evento de apagado al final. |
+| `throttle` | number | No | `1.0` si no hay `force_newtons` | Acelerador pedido, normalmente entre 0 y 1. El motor lo limita entre `min_throttle` y `max_throttle`. |
+| `force_newtons` | number | No | - | Empuje deseado en newtons. Si existe, tiene prioridad y se convierte a `throttle`. |
+| `direction` | direccion | No | Mantiene la guia anterior | Si existe, cambia la orientacion justo antes de encender el motor. |
+
+Si usas `force_newtons`, la fuerza debe estar entre el empuje minimo y maximo disponible para ese motor:
+
+```text
+engine.max_thrust_newtons * engine.min_throttle <= force_newtons <= engine.max_thrust_newtons * engine.max_throttle
+```
+
+Si la fuerza pedida queda fuera de ese rango, se lanza un error.
 
 #### `set_guidance`
 
@@ -1148,6 +1301,12 @@ Cambia hacia donde apunta la nave.
   "direction": "tangential"
 }
 ```
+
+Campos especificos de `set_guidance`:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `direction` | direccion | Si | - | Nueva direccion objetivo de la nave. |
 
 #### `shutdown`
 
@@ -1172,6 +1331,12 @@ Sin `engine`, apaga todos:
 }
 ```
 
+Campos especificos de `shutdown`:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `engine` | string | No | - | Motor que se apaga. Si no lo pones, se apagan todos los motores activos. |
+
 #### `jettison_stage`
 
 Separa una etapa.
@@ -1184,6 +1349,12 @@ Separa una etapa.
   "stage": "Stage1"
 }
 ```
+
+Campos especificos de `jettison_stage`:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `stage` | string | Si | - | Nombre de la etapa que se separa. Debe coincidir con `vehicle.stages[].name` o con una etapa del preset usado. |
 
 ### Direcciones soportadas
 
@@ -1202,6 +1373,8 @@ Tambien puedes pasar un vector:
 "direction": [1, 0, 0]
 ```
 
+Ese vector se interpreta como direccion absoluta y se normaliza.
+
 O un objeto:
 
 ```json
@@ -1210,6 +1383,13 @@ O un objeto:
   "frame": "absolute"
 }
 ```
+
+Campos de una direccion por objeto con `vector`:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `vector` | vector `[x,y,z]` | Si si no mezclas pesos | - | Vector objetivo. No puede ser cero. |
+| `frame` | string | No | `"absolute"` | Actualmente acepta `"absolute"` y `"earth_relative"`. En ambos casos el vector se normaliza; no se transforma con ejes locales. |
 
 Para lanzamientos desde Tierra, normalmente es mejor no usar vectores absolutos. Es mas robusto mezclar direcciones relativas al estado actual:
 
@@ -1226,6 +1406,19 @@ Esto significa:
 75% hacia arriba desde la Tierra
 25% horizontal/downrange
 ```
+
+Campos de una direccion mezclada:
+
+| Campo | Tipo | Obligatorio | Valor por defecto | Que hace |
+|---|---:|---:|---:|---|
+| `radial_out` | number | No | `0.0` | Peso hacia fuera desde el centro de la Tierra. |
+| `radial_in` | number | No | `0.0` | Peso hacia el centro de la Tierra. |
+| `prograde` | number | No | `0.0` | Peso en la direccion de la velocidad relativa a la Tierra. |
+| `retrograde` | number | No | `0.0` | Peso opuesto a la velocidad relativa a la Tierra. |
+| `tangential` | number | No | `0.0` | Peso horizontal aproximado para lanzamiento. |
+| `moon` | number | No | `0.0` | Peso hacia la Luna. |
+
+La suma no tiene que dar 1.0. El codigo suma los vectores ponderados y normaliza el resultado. Si todos los pesos son 0 o la mezcla se cancela hasta vector cero, se lanza un error.
 
 Ejemplo de gravity turn progresivo:
 

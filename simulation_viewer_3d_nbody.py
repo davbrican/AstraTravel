@@ -215,6 +215,7 @@ class NBodyViewer3D:
         self.ax.set_xlim(-d + self.camera.pan_x, d + self.camera.pan_x)
         self.ax.set_ylim(-d + self.camera.pan_y, d + self.camera.pan_y)
         self.ax.set_zlim(-d + self.camera.pan_z, d + self.camera.pan_z)
+        self.ax.set_box_aspect((1.0, 1.0, 1.0))
 
     def _marker_size(self, body: CelestialBody) -> float:
         if body.name == "Sun":
