@@ -1375,6 +1375,18 @@ Tambien puedes pasar un vector:
 
 Ese vector se interpreta como direccion absoluta y se normaliza.
 
+Tambien puedes escribirlo con ejes explicitos:
+
+```json
+"direction": {
+  "x": 0.0,
+  "y": 1.0,
+  "z": 0.15
+}
+```
+
+Ese objeto tambien se interpreta como direccion absoluta y se normaliza.
+
 O un objeto:
 
 ```json

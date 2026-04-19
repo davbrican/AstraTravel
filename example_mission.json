@@ -66,18 +66,52 @@
       "engine": "RL10_ICPS"
     },
     {
-      "at": 10785.0,
+      "at": 10665.0,
       "type": "burn",
       "name": "trans_lunar_injection",
       "engine": "RL10_ICPS",
       "throttle": 1.0,
-      "duration": 170.0,
-      "direction": "tangential"
+      "duration": 150.0,
+      "direction": "prograde"
     },
     {
-      "at": 11055.0,
+      "at": 10815.0,
       "type": "shutdown",
       "name": "tli_cutoff",
+      "engine": "RL10_ICPS"
+    },
+    {
+      "at": 11000.0,
+      "type": "burn",
+      "name": "trans_lunar_injection",
+      "engine": "RL10_ICPS",
+      "throttle": 1.0,
+      "duration": 5.0,
+      "direction": "prograde"
+    },
+    {
+      "at": 11005.0,
+      "type": "shutdown",
+      "name": "tli_cutoff",
+      "engine": "RL10_ICPS"
+    },
+    {
+      "at": 1350000.0,
+      "type": "burn",
+      "name": "lunar_orbit_insertion",
+      "engine": "RL10_ICPS",
+      "throttle": 1.0,
+      "duration": 360.0,
+      "direction": {
+        "x": 0.0,
+        "y": 1.0,
+        "z": 0.15
+      }
+    },
+    {
+      "at": 1350360.0,
+      "type": "shutdown",
+      "name": "loi_cutoff",
       "engine": "RL10_ICPS"
     }
   ]

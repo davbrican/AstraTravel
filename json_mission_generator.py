@@ -438,8 +438,11 @@ def resolve_direction(direction: Any, spacecraft: Spacecraft, earth: CelestialBo
                 raise ValueError("Blended direction cannot resolve to a zero vector")
             return blend.normalized()
 
+        if all(axis in direction for axis in ("x", "y", "z")):
+            return Vector3(float(direction["x"]), float(direction["y"]), float(direction["z"])).normalized()
+
         if "vector" not in direction:
-            raise ValueError("Direction object requires 'vector' or weighted direction keys")
+            raise ValueError("Direction object requires 'vector', x/y/z, or weighted direction keys")
         vector = vector_from_sequence(direction["vector"])
         frame = str(direction.get("frame", "absolute")).lower()
         if frame == "absolute":
