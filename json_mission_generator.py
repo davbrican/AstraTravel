@@ -28,6 +28,9 @@ from spacecraft_models import Engine, GuidanceMode, PropellantType, Spacecraft, 
 from space_simulation_models import CelestialBody, ReferenceFrame, Vector3
 
 
+EVENT_TRIGGER_TOLERANCE_SECONDS = 1e-6
+
+
 class JsonMissionPhase(str, Enum):
     READY = "json_ready"
     RUNNING = "json_running"
@@ -93,7 +96,7 @@ class JsonMissionController:
             return
 
         for event in pending:
-            if current_time_seconds < event.trigger_time_seconds:
+            if current_time_seconds + EVENT_TRIGGER_TOLERANCE_SECONDS < event.trigger_time_seconds:
                 continue
             self._execute_event(event, spacecraft, earth, moon)
             event.executed = True

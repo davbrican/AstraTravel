@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import inf
 
 from atmosphere_models import EarthExponentialAtmosphere
 from launch_mission_profiles import TransLunarMissionController, compute_earth_relative_snapshot
@@ -19,7 +20,10 @@ from spacecraft_models import Spacecraft
 from space_simulation_models import CelestialBody, Node, Transform, Vector3
 
 
-DEFAULT_MAX_SUBSTEP_SECONDS = 2.0
+DEFAULT_POWERED_SUBSTEP_SECONDS = 1.0 / 30.0
+DEFAULT_MAX_SUBSTEP_SECONDS = 0.5
+EVENT_TIME_EPSILON_SECONDS = 1e-6
+LOW_ALTITUDE_FINE_STEP_KM = 200.0
 
 
 @dataclass(slots=True)
@@ -64,6 +68,32 @@ def compute_drag_acceleration_km_s2(spacecraft: Spacecraft, earth: CelestialBody
     return drag_direction * (drag_accel_m_s2 / 1000.0)
 
 
+def _next_controller_event_time(controller: TransLunarMissionController, start_time_seconds: float, end_time_seconds: float) -> float | None:
+    events = getattr(controller, "events", None)
+    if not events:
+        return None
+
+    next_time = inf
+    for event in events:
+        if getattr(event, "executed", False):
+            continue
+        trigger_time = float(getattr(event, "trigger_time_seconds", inf))
+        if trigger_time <= start_time_seconds + EVENT_TIME_EPSILON_SECONDS:
+            continue
+        if trigger_time <= end_time_seconds + EVENT_TIME_EPSILON_SECONDS:
+            next_time = min(next_time, trigger_time)
+
+    return None if next_time == inf else next_time
+
+
+def _needs_fine_substep(spacecraft: Spacecraft, earth: CelestialBody) -> bool:
+    if spacecraft.has_active_propulsion():
+        return True
+
+    altitude_km = (spacecraft.global_position - earth.global_position).magnitude() - earth.radius_km
+    return altitude_km <= LOW_ALTITUDE_FINE_STEP_KM
+
+
 def velocity_verlet_launch_step(
     root: Node,
     controller: TransLunarMissionController,
@@ -104,8 +134,6 @@ def velocity_verlet_launch_step(
 
     sync_global_transforms(root)
 
-    controller.update(spacecraft, earth, moon, absolute_time_seconds + dt_seconds)
-
     gravitational_accelerations_t_dt = compute_accelerations(bodies)
     accelerations_t_dt: list[Vector3] = []
 
@@ -144,10 +172,32 @@ def step_launch_mission_simulation(
         snap = compute_earth_relative_snapshot(sc, earth)
         return MissionStepDiagnosticsV2(0.0, controller.phase.value, snap.altitude_km, snap.speed_km_s, sc.propellant_mass_kg, sc.total_mass_kg)
 
+    body_index = get_body_index(root)
+    earth = body_index["Earth"]
+    moon = body_index["Moon"]
+    spacecraft = next(body for body in iter_bodies(root) if isinstance(body, Spacecraft) and body.name == controller.spacecraft_name)
+
     remaining = simulated_delta
     while remaining > 0.0:
-        dt = min(max_substep_seconds, remaining)
         absolute_time = clock.current_time_seconds - remaining
+        controller.update(spacecraft, earth, moon, absolute_time)
+
+        substep_limit = max_substep_seconds
+        if _needs_fine_substep(spacecraft, earth):
+            substep_limit = min(substep_limit, DEFAULT_POWERED_SUBSTEP_SECONDS)
+
+        next_event_time = _next_controller_event_time(
+            controller,
+            start_time_seconds=absolute_time,
+            end_time_seconds=absolute_time + min(substep_limit, remaining),
+        )
+
+        dt = min(substep_limit, remaining)
+        if next_event_time is not None:
+            dt = min(dt, max(0.0, next_event_time - absolute_time))
+        if dt <= EVENT_TIME_EPSILON_SECONDS:
+            dt = min(substep_limit, remaining)
+
         velocity_verlet_launch_step(root, controller, atmosphere, dt, absolute_time)
         remaining -= dt
 
@@ -166,6 +216,8 @@ def step_launch_mission_simulation(
 
 
 __all__ = [
+    "DEFAULT_MAX_SUBSTEP_SECONDS",
+    "DEFAULT_POWERED_SUBSTEP_SECONDS",
     "MissionStepDiagnosticsV2",
     "compute_drag_acceleration_km_s2",
     "get_body_index",

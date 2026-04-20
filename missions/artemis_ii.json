@@ -1,6 +1,6 @@
 {
   "mission_name": "Artemis II",
-  "time_scale": 1.0,
+  "time_scale": 10000.0,
   "start_time_seconds": 0.0,
   "vehicle": "artemis",
   "start": "DEFAULT",
@@ -66,7 +66,7 @@
       "engine": "RL10_ICPS"
     },
     {
-      "at": 10665.0,
+      "at": 10700.0,
       "type": "burn",
       "name": "trans_lunar_injection",
       "engine": "RL10_ICPS",
@@ -75,41 +75,37 @@
       "direction": "prograde"
     },
     {
-      "at": 10815.0,
+      "at": 10850.0,
       "type": "shutdown",
       "name": "tli_cutoff",
       "engine": "RL10_ICPS"
     },
     {
-      "at": 11000.0,
+      "at": 45000.0,
       "type": "burn",
       "name": "trans_lunar_injection",
       "engine": "RL10_ICPS",
       "throttle": 1.0,
-      "duration": 5.0,
+      "duration": 25.0,
       "direction": "prograde"
     },
     {
-      "at": 11005.0,
+      "at": 45025.0,
       "type": "shutdown",
       "name": "tli_cutoff",
       "engine": "RL10_ICPS"
     },
     {
-      "at": 160000.0,
+      "at": 140000.0,
       "type": "burn",
       "name": "break_for_lunar_orbit_insertion",
       "engine": "RL10_ICPS",
       "throttle": 1.0,
       "duration": 120.0,
-      "direction": {
-        "x": 0.11213526826204347,
-        "y": -0.993673643475667,
-        "z": 0.006194503498483796
-      }
+      "direction": "retrograde"
     },
     {
-      "at": 161200.0,
+      "at": 140200.0,
       "type": "shutdown",
       "name": "lunar_orbit_insertion_cutoff",
       "engine": "RL10_ICPS"
