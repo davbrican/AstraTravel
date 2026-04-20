@@ -79,7 +79,7 @@ def create_apollo_like_launch_vehicle(name: str = "ApolloVehicle", parent=None) 
     return spacecraft, program
 
 
-def create_artemis_like_launch_vehicle(name: str = "ArtemisVehicle", parent=None) -> tuple[Spacecraft, LaunchVehicleProgram]:
+def create_artemis_like_launch_vehicle(name: str = "Orion", parent=None) -> tuple[Spacecraft, LaunchVehicleProgram]:
     core = Stage(
         name="SLS_Core_Boosters",
         dry_mass_kg=200_000.0,
@@ -136,7 +136,7 @@ def create_translunar_launch_scenario(vehicle: str = "artemis") -> LaunchMission
     if vehicle == "apollo":
         spacecraft, program = create_apollo_like_launch_vehicle(name="ApolloVehicle", parent=root)
     else:
-        spacecraft, program = create_artemis_like_launch_vehicle(name="ArtemisVehicle", parent=root)
+        spacecraft, program = create_artemis_like_launch_vehicle(name="Orion", parent=root)
 
     controller = TransLunarMissionController(spacecraft_name=spacecraft.name, program=program)
     controller.place_on_launch_pad(spacecraft, body_index["Earth"], body_index["Moon"])

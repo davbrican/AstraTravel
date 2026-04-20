@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from enum import Enum
+from math import isclose
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -487,8 +488,25 @@ def resolve_direction(direction: Any, spacecraft: Spacecraft, earth: CelestialBo
         if key == "radial_in":
             return (radial * -1.0).normalized()
         if key == "prograde":
+            if isclose(relative_velocity.magnitude(), 0.0):
+                # When spacecraft is at rest relative to Earth, compute tangential direction in local orbit
+                # Tangential = radial × Z-axis (perpendicular to radial in the orbital plane)
+                z_axis = Vector3(0.0, 0.0, 1.0)
+                tangential = radial.cross(z_axis)
+                if isclose(tangential.magnitude(), 0.0):
+                    # If radial is aligned with Z-axis, use X-axis as reference
+                    tangential = Vector3(1.0, 0.0, 0.0)
+                return tangential.normalized()
             return relative_velocity.normalized()
         if key == "retrograde":
+            if isclose(relative_velocity.magnitude(), 0.0):
+                # When spacecraft is at rest relative to Earth, use opposite tangential direction
+                z_axis = Vector3(0.0, 0.0, 1.0)
+                tangential = radial.cross(z_axis)
+                if isclose(tangential.magnitude(), 0.0):
+                    # If radial is aligned with Z-axis, use X-axis as reference
+                    tangential = Vector3(1.0, 0.0, 0.0)
+                return (tangential.normalized() * -1.0)
             return (relative_velocity * -1.0).normalized()
         if key == "tangential":
             normal = earth.global_position.cross(earth.local_velocity_km_s)
