@@ -43,7 +43,19 @@ class JsonMissionEvent:
     throttle: float | None = None
     force_newtons: float | None = None
     direction: Any = None
+    body_name: str | None = None
+    altitude_km: float | None = None
+    hold_until_seconds: float | None = None
+    radial: Any = None
     executed: bool = False
+
+
+@dataclass(slots=True)
+class SurfaceHold:
+    body_name: str
+    radial_vector: Vector3
+    altitude_km: float
+    end_time_seconds: float
 
 
 @dataclass(slots=True)
@@ -53,6 +65,7 @@ class JsonMissionController:
     events: list[JsonMissionEvent]
     phase: JsonMissionPhase = JsonMissionPhase.READY
     recent_events: list[str] = field(default_factory=list)
+    active_surface_hold: SurfaceHold | None = None
 
     def log_event(self, message: str) -> None:
         self.recent_events.append(message)
@@ -65,9 +78,17 @@ class JsonMissionController:
         moon: CelestialBody,
         current_time_seconds: float,
     ) -> None:
+        if self.active_surface_hold is not None:
+            if current_time_seconds < self.active_surface_hold.end_time_seconds:
+                self._apply_surface_hold(self.active_surface_hold, spacecraft, earth, moon)
+            else:
+                self.log_event(f"surface hold released: {self.active_surface_hold.body_name}")
+                self.active_surface_hold = None
+
         pending = [event for event in self.events if not event.executed]
         if not pending:
-            self.phase = JsonMissionPhase.COMPLETE
+            if self.active_surface_hold is None:
+                self.phase = JsonMissionPhase.COMPLETE
             return
 
         for event in pending:
@@ -76,6 +97,29 @@ class JsonMissionController:
             self._execute_event(event, spacecraft, earth, moon)
             event.executed = True
             self.phase = JsonMissionPhase.RUNNING
+
+    def _body_by_name(self, body_name: str, earth: CelestialBody, moon: CelestialBody) -> CelestialBody:
+        key = body_name.lower()
+        if key == "earth":
+            return earth
+        if key == "moon":
+            return moon
+        raise ValueError("surface_hold body must be 'Earth' or 'Moon'")
+
+    def _apply_surface_hold(
+        self,
+        hold: SurfaceHold,
+        spacecraft: Spacecraft,
+        earth: CelestialBody,
+        moon: CelestialBody,
+    ) -> None:
+        body = self._body_by_name(hold.body_name, earth, moon)
+        radial = hold.radial_vector.normalized()
+        spacecraft.shutdown_all_engines()
+        spacecraft.set_local_position(body.global_position + radial * (body.radius_km + hold.altitude_km))
+        spacecraft.local_velocity_km_s = body.local_velocity_km_s
+        spacecraft.set_guidance_mode(GuidanceMode.TARGET_VECTOR, radial)
+        spacecraft.update_guidance()
 
     def _execute_event(
         self,
@@ -130,6 +174,24 @@ class JsonMissionController:
             else:
                 spacecraft.shutdown_engine(event.engine_name)
                 self.log_event(f"{event.name}: engine shutdown {event.engine_name}")
+            return
+
+        if event.event_type == "surface_hold_start":
+            if event.body_name is None or event.hold_until_seconds is None:
+                raise ValueError(f"Event {event.name!r} requires body_name and hold_until_seconds")
+            body = self._body_by_name(event.body_name, earth, moon)
+            if event.radial is None:
+                radial = (spacecraft.global_position - body.global_position).normalized()
+            else:
+                radial = vector_from_sequence(event.radial).normalized()
+            self.active_surface_hold = SurfaceHold(
+                body_name=event.body_name,
+                radial_vector=radial,
+                altitude_km=event.altitude_km if event.altitude_km is not None else 0.0,
+                end_time_seconds=event.hold_until_seconds,
+            )
+            self._apply_surface_hold(self.active_surface_hold, spacecraft, earth, moon)
+            self.log_event(f"{event.name}: surface hold {event.body_name}")
             return
 
         raise ValueError(f"Unsupported event_type {event.event_type!r}")
@@ -394,6 +456,21 @@ def build_events(steps: Iterable[dict[str, Any]]) -> list[JsonMissionEvent]:
             )
             continue
 
+        if step_type == "surface_hold":
+            duration = float(step["duration"])
+            events.append(
+                JsonMissionEvent(
+                    trigger_time_seconds=start,
+                    event_type="surface_hold_start",
+                    name=name,
+                    body_name=str(step.get("body", "Moon")),
+                    altitude_km=float(step.get("altitude_km", 0.0)),
+                    hold_until_seconds=start + duration,
+                    radial=step.get("radial"),
+                )
+            )
+            continue
+
         raise ValueError(f"Unsupported step type {step_type!r}")
 
     return sorted(events, key=lambda event: event.trigger_time_seconds)
@@ -420,12 +497,14 @@ def resolve_direction(direction: Any, spacecraft: Spacecraft, earth: CelestialBo
             return normal.normalized().cross(radial.normalized()).normalized()
         if key == "moon":
             return (moon.global_position - spacecraft.global_position).normalized()
+        if key == "earth":
+            return (earth.global_position - spacecraft.global_position).normalized()
         raise ValueError(f"Unsupported direction {direction!r}")
 
     if isinstance(direction, dict):
         blend = Vector3.zero()
         has_blend_component = False
-        for key in ("radial_out", "radial_in", "prograde", "retrograde", "tangential", "moon"):
+        for key in ("radial_out", "radial_in", "prograde", "retrograde", "tangential", "moon", "earth"):
             if key not in direction:
                 continue
             weight = float(direction[key])
@@ -480,6 +559,7 @@ __all__ = [
     "JsonMissionController",
     "JsonMissionEvent",
     "JsonMissionPhase",
+    "SurfaceHold",
     "build_events",
     "generate_mission",
     "load_mission_config",

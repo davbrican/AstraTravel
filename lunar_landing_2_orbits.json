@@ -1,0 +1,97 @@
+{
+  "mission_name": "Artemis III",
+  "time_scale": 1.0,
+  "start_time_seconds": 0.0,
+  "vehicle": {
+    "name": "Orion",
+    "dry_radius_km": 5.0,
+    "color_hex": "#FFAA55",
+    "stages": [
+      {
+        "name": "TransferLander",
+        "dry_mass_kg": 8000.0,
+        "tanks": [
+          {
+            "name": "MainProp",
+            "propellant_type": "lh2",
+            "capacity_kg": 200000.0,
+            "current_mass_kg": 200000.0
+          }
+        ],
+        "engines": [
+          {
+            "name": "MAIN_ENGINE",
+            "max_thrust_newtons": 4000000.0,
+            "specific_impulse_seconds": 450.0,
+            "tank_names": ["MainProp"]
+          }
+        ]
+      }
+    ]
+  },
+  "start": {
+    "type": "coordinates",
+    "frame": "earth_relative",
+    "position_km": [
+      5717.178806945682, -3964.0017014741898, -442.03845992896197
+    ],
+    "velocity_km_s": [
+      4.274845121139226, 6.2189703403668535, -0.4794946602312363
+    ],
+    "direction": "prograde"
+  },
+  "steps": [
+    {
+      "at": 11584.668219186182,
+      "type": "burn",
+      "name": "trans_lunar_injection_after_two_high_orbits",
+      "engine": "MAIN_ENGINE",
+      "throttle": 1.0,
+      "duration": 120.0,
+      "direction": "prograde"
+    },
+    {
+      "at": 149000.0,
+      "type": "burn",
+      "name": "lunar_landing_brake",
+      "engine": "MAIN_ENGINE",
+      "throttle": 0.15,
+      "duration": 320.0,
+      "direction": {
+        "x": 0.11213526826204347,
+        "y": -0.993673643475667,
+        "z": 0.006194503498483796
+      }
+    },
+    {
+      "at": 151640.0,
+      "type": "surface_hold",
+      "name": "moon_surface_stay_two_days",
+      "body": "Moon",
+      "duration": 172800.0,
+      "altitude_km": 0.0,
+      "radial": [-0.8620744848406215, -0.4996849033404315, 0.08451378562365247]
+    },
+    {
+      "at": 324440.0,
+      "type": "burn",
+      "name": "trans_earth_injection",
+      "engine": "MAIN_ENGINE",
+      "throttle": 0.5,
+      "duration": 60.0,
+      "direction": {
+        "earth": 0.9,
+        "prograde": 0.1
+      }
+    },
+    {
+      "at": 500640.0,
+      "type": "surface_hold",
+      "name": "earth_landing",
+      "body": "Earth",
+      "duration": 86400.0,
+      "altitude_km": 0.0,
+      "radial": [-0.3022858977811086, 0.9531643961473123, 0.010043401804099562]
+    }
+  ]
+}
