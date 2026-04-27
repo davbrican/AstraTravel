@@ -24,6 +24,7 @@ DEFAULT_POWERED_SUBSTEP_SECONDS = 1.0 / 30.0
 DEFAULT_MAX_SUBSTEP_SECONDS = 0.5
 EVENT_TIME_EPSILON_SECONDS = 1e-6
 LOW_ALTITUDE_FINE_STEP_KM = 200.0
+G0_M_S2 = 9.80665
 
 
 @dataclass(slots=True)
@@ -66,6 +67,24 @@ def compute_drag_acceleration_km_s2(spacecraft: Spacecraft, earth: CelestialBody
     drag_accel_m_s2 = drag_force_n / max(spacecraft.total_mass_kg, 1.0)
     drag_direction = (relative_velocity * -1.0).normalized()
     return drag_direction * (drag_accel_m_s2 / 1000.0)
+
+
+def compute_spacecraft_acceleration_km_s2(
+    root: Node,
+    controller: TransLunarMissionController,
+    atmosphere: EarthExponentialAtmosphere,
+) -> Vector3:
+    bodies = iter_bodies(root)
+    body_index = get_body_index(root)
+    earth = body_index["Earth"]
+    spacecraft = next(body for body in bodies if isinstance(body, Spacecraft) and body.name == controller.spacecraft_name)
+
+    gravitational_accelerations = compute_accelerations(bodies)
+    spacecraft_index = bodies.index(spacecraft)
+    gravity_acc = gravitational_accelerations[spacecraft_index]
+    thrust_acc = spacecraft.compute_thrust_acceleration_km_s2()
+    drag_acc = compute_drag_acceleration_km_s2(spacecraft, earth, atmosphere)
+    return gravity_acc + thrust_acc + drag_acc
 
 
 def _next_controller_event_time(controller: TransLunarMissionController, start_time_seconds: float, end_time_seconds: float) -> float | None:
@@ -220,6 +239,7 @@ __all__ = [
     "DEFAULT_POWERED_SUBSTEP_SECONDS",
     "MissionStepDiagnosticsV2",
     "compute_drag_acceleration_km_s2",
+    "compute_spacecraft_acceleration_km_s2",
     "get_body_index",
     "iter_spacecraft",
     "step_launch_mission_simulation",

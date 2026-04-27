@@ -26,7 +26,11 @@ from matplotlib.animation import FuncAnimation
 
 from json_mission_generator import generate_mission
 from launch_mission_profiles import compute_earth_relative_snapshot
-from mission_engine import step_launch_mission_simulation
+from mission_engine import (
+    G0_M_S2,
+    compute_spacecraft_acceleration_km_s2,
+    step_launch_mission_simulation,
+)
 from mission_scenarios import create_translunar_launch_scenario
 from nbody_engine import compute_diagnostics
 from solar_system_factory_nbody import AU_KM, SECONDS_PER_DAY
@@ -351,6 +355,12 @@ class MissionViewer3DV2:
     def _update_overlay(self) -> None:
         diag = compute_diagnostics(self.root)
         snap = compute_earth_relative_snapshot(self.spacecraft, self.earth)
+        acceleration_m_s2 = compute_spacecraft_acceleration_km_s2(
+            self.root,
+            self.controller,
+            self.atmosphere,
+        ).magnitude() * 1000.0
+        force_g = acceleration_m_s2 / G0_M_S2
         moon_distance_km = (self.moon.global_position - self.spacecraft.global_position).magnitude()
         active_engines = ", ".join(engine.name for engine in self.spacecraft.active_engines()) or "none"
         stages = ", ".join(stage.name for stage in self.spacecraft.iter_stages())
@@ -376,6 +386,8 @@ class MissionViewer3DV2:
                 f"Mission time: {self.clock.current_time_seconds:.1f} s ({self.clock.current_time_seconds / SECONDS_PER_DAY:.3f} d)",
                 f"Altitude: {snap.altitude_km:,.1f} km",
                 f"Speed: {snap.speed_km_s:,.3f} km/s",
+                f"Acceleration: {acceleration_m_s2:,.3f} m/s2",
+                f"Force: {force_g:,.3f} G",
                 f"Propellant: {self.spacecraft.propellant_mass_kg:,.1f} kg",
                 f"Stage prop: {stage_propellant}",
                 f"Total mass: {self.spacecraft.total_mass_kg:,.1f} kg",
