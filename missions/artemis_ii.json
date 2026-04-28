@@ -1,6 +1,6 @@
 {
   "mission_name": "Artemis II",
-  "time_scale": 1.0,
+  "time_scale": 1000.0,
   "start_time_seconds": 0.0,
   "vehicle": "artemis",
   "start": "DEFAULT",
@@ -96,19 +96,19 @@
       "engine": "RL10_ICPS"
     },
     {
-      "at": 140000.0,
+      "at": 130000.0,
       "type": "burn",
       "name": "break_for_lunar_orbit_insertion",
-      "engine": "RL10_ICPS",
+      "engine": "OMS_E_Main",
       "throttle": 1.0,
-      "duration": 130.0,
+      "duration": 1000.0,
       "direction": "retrograde"
     },
     {
-      "at": 140130.0,
+      "at": 131000.0,
       "type": "shutdown",
       "name": "lunar_orbit_insertion_cutoff",
-      "engine": "RL10_ICPS"
+      "engine": "OMS_E_Main"
     }
   ]
 }
