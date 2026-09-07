@@ -1,0 +1,13 @@
+{
+  "name": "astratravel-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AstraTravel: laboratorio de vuelo espacial newtoniano en el navegador",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check app.js && node --check physics.js && node --check worker.js && node --check renderer.js"
+  },
+  "engines": { "node": ">=20" }
+}

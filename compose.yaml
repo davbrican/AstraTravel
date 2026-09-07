@@ -1,0 +1,6 @@
+services:
+  astratravel:
+    build: .
+    ports:
+      - "${ASTRATRAVEL_PORT:-8095}:80"
+    restart: unless-stopped

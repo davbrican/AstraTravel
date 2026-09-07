@@ -1,3 +1,27 @@
+# AstraTravel · versión web
+
+Esta rama añade una aplicación web de simulación espacial: lanzamiento por etapas, órbita terrestre, sobrevuelo lunar y exploración N-body del sistema solar. Incluye control manual, guiado automático, cámara 3D, telemetría y exportación CSV.
+
+## Ejecutar la web
+
+```bash
+node web/server.mjs
+```
+
+Abre **http://localhost:8080**. Requiere Node.js 20+, sin instalación de dependencias.
+
+O con Docker:
+
+```bash
+docker compose up -d --build
+```
+
+Abre **http://localhost:8095**. Variable opcional: `ASTRATRAVEL_PORT`.
+
+Consulta **[web/README.md](web/README.md)** para escenarios, controles, física, aproximaciones y pruebas. El programa Python original se conserva debajo y en sus archivos originales.
+
+---
+
 # v3_spaceship_missions
 
 Simulador espacial en Python centrado en dos ideas:

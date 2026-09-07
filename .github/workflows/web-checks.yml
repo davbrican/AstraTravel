@@ -1,0 +1,30 @@
+name: Web flight checks
+on:
+  push:
+    branches: [main, feat/astratravel-web]
+    paths: ['web/**', 'Dockerfile', 'compose.yaml', '.github/workflows/web-checks.yml']
+  pull_request:
+    paths: ['web/**', 'Dockerfile', 'compose.yaml', '.github/workflows/web-checks.yml']
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate JavaScript
+        working-directory: web
+        run: npm run check
+      - name: Verify physics and worker lifecycle
+        working-directory: web
+        run: npm test
+      - name: Build and smoke-test the container
+        run: |
+          docker build -t astratravel-web .
+          docker run -d --name astratravel-test -p 8095:80 astratravel-web
+          curl --fail --retry 10 --retry-connrefused --retry-delay 1 http://localhost:8095/
+          curl --fail http://localhost:8095/worker.js
+          docker stop astratravel-test
