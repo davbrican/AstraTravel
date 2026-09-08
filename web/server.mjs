@@ -15,4 +15,4 @@ http.createServer(async (req, res) => {
     const data = await readFile(file);
     res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-cache' }).end(data);
   } catch { res.writeHead(404).end('Not found'); }
-}).listen(Number(process.env.PORT || 8080), '0.0.0.0', () => console.log('AstraTravel: http://localhost:' + (process.env.PORT || 8080)));
+}).listen(Number(process.env.PORT || 8097), '0.0.0.0', () => console.log('AstraTravel: http://localhost:' + (process.env.PORT || 8097)));

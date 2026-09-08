@@ -8,7 +8,7 @@ Esta rama añade una aplicación web de simulación espacial: lanzamiento por et
 node web/server.mjs
 ```
 
-Abre **http://localhost:8080**. Requiere Node.js 20+, sin instalación de dependencias.
+Abre **http://localhost:8097**. Requiere Node.js 20+, sin instalación de dependencias.
 
 O con Docker:
 
@@ -16,7 +16,7 @@ O con Docker:
 docker compose up -d --build
 ```
 
-Abre **http://localhost:8095**. Variable opcional: `ASTRATRAVEL_PORT`.
+Abre **http://localhost:8097**. Variable opcional: `ASTRATRAVEL_PORT`.
 
 Consulta **[web/README.md](web/README.md)** para escenarios, controles, física, aproximaciones y pruebas. El programa Python original se conserva debajo y en sus archivos originales.
 

@@ -25,7 +25,7 @@ jobs:
         run: |
           docker build -t astratravel-web .
           docker run --rm --entrypoint nginx astratravel-web -t
-          docker run -d --name astratravel-test -p 8095:80 astratravel-web
+          docker run -d --name astratravel-test -p 8097:80 astratravel-web
           trap 'docker logs astratravel-test; docker rm -f astratravel-test' EXIT
-          curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 1 --max-time 5 --output /dev/null http://localhost:8095/
-          curl --fail --silent --show-error --output /dev/null http://localhost:8095/worker.js
+          curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 1 --max-time 5 --output /dev/null http://localhost:8097/
+          curl --fail --silent --show-error --output /dev/null http://localhost:8097/worker.js

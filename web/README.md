@@ -10,7 +10,7 @@ Desde la raíz del repositorio, con Node.js 20 o superior:
 node web/server.mjs
 ```
 
-Abre http://localhost:8080. También puedes ejecutar `npm start` dentro de `web/`; no requiere `npm install`. El puerto se cambia con `PORT`. No abras `index.html` mediante `file://`: los módulos y el worker necesitan HTTP.
+Abre http://localhost:8097. También puedes ejecutar `npm start` dentro de `web/`; no requiere `npm install`. El puerto se cambia con `PORT`. No abras `index.html` mediante `file://`: los módulos y el worker necesitan HTTP.
 
 Con Docker, desde la raíz:
 
@@ -18,7 +18,7 @@ Con Docker, desde la raíz:
 docker compose up -d --build
 ```
 
-Abre http://localhost:8095. Puedes cambiar el puerto con `ASTRATRAVEL_PORT`. La imagen solo contiene los siete archivos públicos necesarios y Nginx; no ejecuta Python ni Node en producción. La misma carpeta web puede servirse con cualquier servidor estático que entregue JavaScript con el MIME correcto. Los recursos usan rutas relativas para permitir alojarla bajo un subdirectorio.
+Abre http://localhost:8097. Puedes cambiar el puerto con `ASTRATRAVEL_PORT`. La imagen solo contiene los siete archivos públicos necesarios y Nginx; no ejecuta Python ni Node en producción. La misma carpeta web puede servirse con cualquier servidor estático que entregue JavaScript con el MIME correcto. Los recursos usan rutas relativas para permitir alojarla bajo un subdirectorio.
 
 ## Escenarios
 
